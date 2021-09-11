@@ -1,0 +1,365 @@
+import discord
+from discord.ext import commands
+import asyncio
+import time
+import random
+import json
+
+PREFIX = ";"
+TOKEN = ""
+
+
+roll = commands.Bot(command_prefix=PREFIX)
+
+
+with open('status.json') as f:
+    config = json.load(f)
+
+GETSTATUS = config.get("Status")
+
+
+EMBED_FIELD_COLOR = 0x36393E
+@roll.event
+async def on_command_error(ctx: commands.Context, error):
+    error = getattr(error, "original", error)
+    if hasattr(ctx.command, 'on_error'):
+        return
+    elif isinstance(error, commands.NoPrivateMessage):
+        try:
+            await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+        except discord.HTTPException:
+            pass
+
+    elif isinstance(error, commands.CommandNotFound):
+        pass
+
+    elif isinstance(error, commands.TooManyArguments):
+        embed = discord.Embed(colour = EMBED_FIELD_COLOR, description="Too Many Characters! (limit=256)")
+        embed.set_author(name='Too many letters/char')
+        #embed.add_field(name='',value="...")
+        embed.set_footer(text ='xD imagine')
+        await ctx.send(embed=embed)
+    elif isinstance(error, commands.CommandOnCooldown):
+        msg = '**Command is still on cooldown**, Try again in {:.2f}s'.format(error.retry_after)
+        await ctx.send(msg)
+    elif isinstance(error, commands.MissingPermissions):
+        missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in error.missing_perms]
+        if len(missing) > 2:
+            fmt = '{}, and {}'.format("**, **".join(missing[:-1]), missing[-1])
+        else:
+            fmt = ' and '.join(missing)
+        _message = f'You need the **{fmt}** permission(s) to use this command.'
+        await ctx.send(_message)
+        return
+    elif isinstance(error, commands.UserInputError):
+        embed = discord.Embed(colour = EMBED_FIELD_COLOR, description="Invalid Input! Check your arguements and try again")
+        embed.set_author(name='Input error')
+        #embed.add_field(name='Invalid Input! Check your arguements and try again',value='...')
+        embed.set_footer(text ='Imagine getting a error msg')
+        await ctx.send(embed=embed)
+    elif isinstance(error,commands.NotOwner):
+
+        embed = discord.Embed(colour = EMBED_FIELD_COLOR, description="That command is either non-existent, or not available to you")
+        embed.set_author(name='Why just why...')
+        #embed.add_field(name='That command is either non-existent, or not available to you',value='...')
+        embed.set_footer(text ='so..')
+        await ctx.send(embed=embed)
+    elif isinstance(error,commands.BotMissingPermissions):
+
+            embed = discord.Embed(colour = EMBED_FIELD_COLOR)
+            embed.set_author(name='Missing Bot Permissions', description="I don't have permission to do this!")
+            #embed.add_field(name='',value='...')
+            #embed.set_footer(text ='Try ')
+            await ctx.send(embed=embed)
+
+    elif isinstance(error, commands.CommandInvokeError):
+        print(error.original)
+        
+    elif isinstance(error, discord.Forbidden):
+            em = discord.Embed(title='Missing Perms!',description= "I dont have perms or the role is above my role, So I cant do anything to the user", color = 0xe74c3c)
+            em.set_footer(text="if you wont know what permissions to add you can always add admin perm to it! an easy fix")
+            await ctx.send(embed = em)
+
+    elif isinstance(error,commands.MissingRequiredArgument):
+        embed = discord.Embed(colour = EMBED_FIELD_COLOR)
+        embed.set_author(name='Missing arguement(s)', description="Missing command arguements! ")
+        #embed.add_field(name='Missing command arguements! ',value='...')   
+        embed.set_footer(text ='Hello fellow humans')
+        await ctx.send(embed=embed)
+    elif isinstance(error, commands.BotMissingPermissions):
+        missing_perm = error.missing_perms[0].replace('_', ' ')
+        embed=discord.Embed(title="Invalid Permission", color=0x32e318)
+        embed.add_field(name="Bot doesn't have sufficient permissions, permissions needed are:", value=missing_perm, inline=False)
+        embed.set_footer(text="Suggestion? dm me")
+        await ctx.send(embed=embed)
+        return
+
+  
+    else:
+        embed = discord.Embed(description="Unknown Error",colour = EMBED_FIELD_COLOR)
+        embed.set_footer(text ='how did you do it?')
+        await ctx.send(embed=embed)
+        raise error
+    #fight code
+
+
+
+
+@roll.event
+async def on_ready():
+  print("Roll Online")
+
+roll.remove_command('help')
+@roll.group(invoke_without_command=True) #wait is this supposed to be true
+async def help(ctx):
+  rollHelpEmbed = discord.Embed(
+    description="**General** » General Commands\n**Moderation** » Roll Moderation Commands",
+    color=0xf5f5f5,
+  timestamp=ctx.message.created_at)
+  rollHelpEmbed.set_author(name="Roll")
+  rollHelpEmbed.set_footer(text="rollsocial.xyz")
+
+  await ctx.send(embed=rollHelpEmbed)
+
+@help.command()
+async def general(ctx):
+  rollGeneralEmbed = discord.Embed(
+    color=0xf5f5f5,
+    description="``whois``, ``avatar``, ``rollstatus``, ``coinflip``, ``nick``",
+    
+  timestamp=ctx.message.created_at)
+  rollGeneralEmbed.set_author(name="Roll General")
+  rollGeneralEmbed.set_footer(text="rollsocial.xyz")
+
+  await ctx.send(embed=rollGeneralEmbed)
+
+@roll.command()
+async def general(ctx):
+  rollGeneralEmbed = discord.Embed(
+    color=0xf5f5f5,
+    description="``whois``, ``avatar``, ``rollstatus``, ``coinflip``, ``nick``",
+    
+  timestamp=ctx.message.created_at)
+  rollGeneralEmbed.set_author(name="Roll General")
+  rollGeneralEmbed.set_footer(text="rollsocial.xyz")
+
+  await ctx.send(embed=rollGeneralEmbed)
+
+
+@roll.command()
+async def whois(ctx, member:discord.Member=None):
+    
+    if member is None:
+        member = ctx.author
+   
+    roles = [role for role in member.roles]
+    allroles = [role.mention for role in roles[1:]]
+    em = discord.Embed(title = member.name , description = member.mention ,color = 0xf5f5f5)
+    em.add_field(name="Display Name:", value=member.display_name)
+    em.add_field(name = "ID", value = member.id , inline = True)
+    em.add_field(name="Created Account On:", value=member.created_at.strftime("%a, %#d %B %Y, %I:%M %p UTC"))
+    em.add_field(name="Joined Server On:", value=member.joined_at.strftime("%a, %#d %B %Y, %I:%M %p UTC"))
+    em.add_field(name=f"Roles [{len(roles)}]:", value="\n".join(allroles))
+    em.add_field(name="Highest Role:", value=f"{member.top_role.mention if member.top_role else 'N/A'}")
+    em.set_thumbnail(url = member.avatar_url)
+    em.set_author(name="Roll General")
+    em.set_footer(text="rollsocial.xyz")
+    await ctx.send(embed=em)
+
+
+
+@roll.command(aliases=["av"])
+async def avatar(ctx, *, member: discord.Member = None):
+    if member == None:
+        member = ctx.author
+    embed = discord.Embed(title = f"{member.display_name}'s Avatar", timestamp = ctx.message.created_at)
+    embed.set_image(url=member.avatar_url)
+    embed.set_footer(text='rollsocial.xyz')
+    await ctx.send(embed=embed)
+
+lostArray = [
+  "Better Luck Next Time!",
+  "Try Again!",
+  "You Lost ;-;",
+  "Wait? I Thought You Never Lost",
+  "XD GET GUD",
+  "Pain."
+]
+  
+lostRandomArray = random.choice(lostArray)
+
+@roll.command(aliases=["cointoss", "flip", "coin"])
+async def coinflip(ctx):
+  await ctx.send("Heads or Tails? :coin:")
+  try:  
+    msg = await roll.wait_for('message', timeout=30,)
+  except asyncio.TimeoutError: 
+    await ctx.send("Timed out!")
+  iamSmart=['heads','tails']
+  a=random.choice(iamSmart)
+  print(a)
+  if a==msg.content:
+    await ctx.send(f"**{a}**! You won")
+  else:
+    await ctx.send(f"**{a}**, {lostRandomArray}")
+
+
+@roll.command(aliases=["status"])
+@commands.has_permissions(administrator=True)
+async def rollstatus(ctx,arg1=None):
+  if arg1==None:
+    await ctx.send("what status do you want?")
+  if arg1=='o':
+    onlineStatus = "online"
+    onlineStatusEmbed = discord.Embed()
+    onlineStatusEmbed.set_author(name="Roll Status: Online", icon_url="https://cdn.discordapp.com/attachments/886075565927452703/886091520325849098/image0.png")
+    await ctx.send(embed=onlineStatusEmbed)
+    jsonDataOnline = {
+      'Status':onlineStatus
+    }
+    with open("status.json", "w") as f:
+      json.dump(jsonDataOnline, f)
+
+  if arg1=='m':
+    maintenanceStatus = "maintenance"
+    maintenanceStatusEmbed = discord.Embed()
+    maintenanceStatusEmbed.set_author(name="Roll Status: Maintenance", icon_url="https://cdn.discordapp.com/attachments/886058311361904715/886114615417794610/image0.png")
+    await ctx.send(embed=maintenanceStatusEmbed)
+    jsonDataMat = {
+      'Status':maintenanceStatus
+    }
+    with open("status.json", "w") as f:
+      json.dump(jsonDataMat, f)
+
+  if arg1=='off':
+    offlineStatus = "offline"
+    offlineStatusEmbed = discord.Embed()
+    offlineStatusEmbed.set_author(name="Roll Status: Offline", icon_url="https://cdn.discordapp.com/attachments/886058311361904715/886117992772010015/image0.png")
+    await ctx.send(embed=offlineStatusEmbed)
+    jsonDataOff = {
+      'Status':offlineStatus
+    }
+    with open("status.json", "w") as f:
+      json.dump(jsonDataOff, f)
+
+@roll.command()
+@commands.has_permissions(manage_nicknames=True)
+async def nick(ctx, member: discord.Member, nick):
+  await member.edit(nick=nick)
+  await ctx.send(f"Nickname for **{member.mention}** was changed to: **{nick}**")
+
+@help.command(aliases=["mod"])
+async def moderation(ctx):
+  rollHelpModEmbed = discord.Embed(
+    description="``slowmode``, ``ban``, ``kick``, ``purgechannel``, ``warn``",
+    color=0xf5f5f5,
+  timestamp=ctx.message.created_at)
+  rollHelpModEmbed.set_author(name="Roll")
+  rollHelpModEmbed.set_footer(text="rollsocial.xyz")
+
+  await ctx.send(embed=rollHelpModEmbed)
+
+@roll.command(aliases=["mod"])
+async def moderation(ctx):
+  rollHelpModEmbed = discord.Embed(
+    description="``slowmode``, ``ban``, ``kick``, ``purgechannel``",
+    color=0xf5f5f5,
+  timestamp=ctx.message.created_at)
+  rollHelpModEmbed.set_author(name="Roll")
+  rollHelpModEmbed.set_footer(text="rollsocial.xyz")
+
+  await ctx.send(embed=rollHelpModEmbed)
+
+@roll.command(aliases=["sm"])
+async def slowmode(ctx, seconds: int):
+  await ctx.channel.edit(slowmode_delay=seconds)
+  await ctx.send(f"Slowmode delay was set to: **{seconds}**")
+
+@roll.command()
+async def ban(ctx, member : discord.Member, *, reason="Unprovided"):
+  if member == None:
+    await ctx.send("Unable To Ban Yourself")
+  await member.ban(reason=reason)
+  banEmbed = discord.Embed(color=discord.Color.red())
+  banEmbed.set_author(name=f"**{member.display_name}** Has Been Successfully Banned", icon_url={member.avatar_url})
+  await ctx.member.send(":rotating_light: You have been banned from **Roll Community Discord**\nhttps://rollsocial.xyz")
+  await ctx.send(embed=banEmbed)
+
+@roll.command()
+async def kick(ctx, member : discord.Member, *, reason="Unprovided"):
+  if member == None:
+    await ctx.send("Unable To Kick Yourself")
+  await member.kick(reason=reason)
+  banEmbed = discord.Embed(color=discord.Color.yellow())
+  banEmbed.set_author(name=f"**{member.display_name}** Has Been Successfully Kicked", icon_url={member.avatar_url})
+  await ctx.member.send(":rotating_light: You have been kicked from **Roll Community Discord**\nhttps://rollsocial.xyz")
+  await ctx.send(embed=banEmbed)
+
+@roll.command()
+@commands.has_permissions(manage_messages=True)
+async def purgechannel(ctx, amount=1000):
+  await ctx.channel.purge(limit=amount)
+  await ctx.send("**Channel Purged**")
+  await ctx.send("https://i.giphy.com/media/HhTXt43pk1I1W/200.gif")
+
+@help.command()
+async def purgechannel(ctx):
+  purgeEmbed = discord.Embed(description="Purges Channel Messages {Note: Requires Admin}\n[] = Option/Not Needed\nSyntax: ``;purgechannel [amount]``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  purgeEmbed.set_author(name="Help / purgechannel")
+  purgeEmbed.set_footer(text="rollsocial.xyz")
+  await ctx.send(embed=purgeEmbed)
+
+@help.command()
+async def ban(ctx):
+  banEmbed = discord.Embed(description="Bans Specifed Member {Note: Requires Admin}\n<> = Required/Needed\nSyntax: ``;ban <member>``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  banEmbed.set_author(name="Help / ban")
+  banEmbed.set_footer(text="rollsocial.xyz")
+  await ctx.send(embed=banEmbed)
+
+@help.command()
+async def kick(ctx):
+  banEmbed = discord.Embed(description="Kicks Specifed Member {Note: Requires Admin}\n<> = Required/Needed\nSyntax: ``;kick <member>``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  banEmbed.set_author(name="Help / kick")
+  banEmbed.set_footer(text="rollsocial.xyz")
+
+@help.command()
+async def slowmode(ctx):
+  banEmbed = discord.Embed(description="Sets Slowmode of A Channel {Note: Requires Admin}\n<> = Required/Needed\nSyntax: ``;sm <amount>``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  banEmbed.set_author(name="Help / slowmode")
+  banEmbed.set_footer(text="rollsocial.xyz")
+  await ctx.send(embed=banEmbed)
+
+@help.command()
+async def rollstatus(ctx):
+  banEmbed = discord.Embed(description="Sets Status Public Status of Roll\n<> = Required/Needed\nSyntax: ``;rollstatus <o=Online/m=Maintenance/off=Offline>``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  banEmbed.set_author(name="Help / rollstatus")
+  banEmbed.set_footer(text="rollsocial.xyz")
+  await ctx.send(embed=banEmbed)
+
+
+@help.command()
+async def whois(ctx):
+  banEmbed = discord.Embed(description="Displays user info\n[] = Option/Not Needed\nSyntax: ``;whois [member]``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  banEmbed.set_author(name="Help / whois")
+  banEmbed.set_footer(text="rollsocial.xyz")
+  await ctx.send(embed=banEmbed)
+
+@help.command()
+async def avatar(ctx):
+  banEmbed = discord.Embed(description="Displays User Avatar\n[] = Option/Not Needed\nSyntax: ``;av [member]``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  banEmbed.set_author(name="Help / avatar")
+  banEmbed.set_footer(text="rollsocial.xyz")
+
+  await ctx.send(embed=banEmbed)
+
+@help.command()
+async def coinflip(ctx):
+  banEmbed = discord.Embed(description="Coin Tossing, Heads or Tails\nSyntax: ``;coinflip``", color=0xf5f5f5, timestamp=ctx.message.created_at)
+  banEmbed.set_author(name="Help / coinflip")
+  banEmbed.set_footer(text="rollsocial.xyz")
+  
+  await ctx.send(embed=banEmbed)
+
+
+if __name__ == "__main__":
+  roll.run(TOKEN)
